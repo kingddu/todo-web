@@ -2,6 +2,7 @@ import client from './client'
 import type { User } from '../types'
 
 export const authApi = {
+  // CSRF 쿠키를 서버에서 받아오기 위해 호출 (응답 본문은 사용하지 않음)
   csrf: () =>
     client.get('/auth/csrf'),
 

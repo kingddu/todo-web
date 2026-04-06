@@ -1,10 +1,17 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+
+  // 이미 로그인 상태면 홈으로
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/today', { replace: true })
+    }
+  }, [user, authLoading, navigate])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

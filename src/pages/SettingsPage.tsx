@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useFont } from "../contexts/FontContext";
 import { useNavigate } from "react-router-dom";
+import { useInvitations } from "../contexts/InvitationContext";
 
 export default function SettingsPage() {
   const { fontId, setFontId, fonts } = useFont();
   const navigate = useNavigate();
+  const { count } = useInvitations();
   const [open, setOpen] = useState(false);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState(260);
 
@@ -87,7 +89,15 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex-1 text-left">
-            <p className="text-sm font-medium text-gray-800">그룹 관리</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-gray-800">그룹 관리</p>
+              {count > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full text-white font-semibold"
+                  style={{ background: '#E85D2F' }}>
+                  새로운 그룹초대 {count}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-0.5">
               내 그룹 목록 확인 및 생성
             </p>

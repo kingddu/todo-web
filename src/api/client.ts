@@ -1,15 +1,8 @@
 import axios from 'axios'
 
-// 메모리 우선, 쿠키 폴백
-let _csrfToken: string | null = null
-
-export function setCsrfToken(token: string) {
-  _csrfToken = token
-}
-
+// CSRF 토큰을 항상 쿠키에서 읽음
+// CsrfCookieFilter가 모든 응답에 XSRF-TOKEN 쿠키를 갱신하므로 항상 최신 값
 function getCsrfToken(): string | null {
-  if (_csrfToken) return _csrfToken
-  // CsrfCookieFilter가 설정한 쿠키에서 폴백
   const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
   return match ? decodeURIComponent(match[1]) : null
 }

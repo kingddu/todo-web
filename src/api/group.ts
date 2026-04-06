@@ -1,5 +1,5 @@
 import client from './client'
-import type { Group, GroupDetail, MyGroupSummary } from '../types'
+import type { Group, GroupDetail, GroupInvitationSummary, MyGroupSummary } from '../types'
 
 export const groupApi = {
   getMyGroups: () =>
@@ -33,7 +33,7 @@ export const groupApi = {
     client.post(`/groups/${groupId}/invitations`, { inviteEmails }),
 
   getMyInvitations: () =>
-    client.get('/group-invitations/me'),
+    client.get<GroupInvitationSummary[]>('/group-invitations/me'),
 
   acceptInvitation: (invitationId: number) =>
     client.post(`/group-invitations/${invitationId}/accept`),

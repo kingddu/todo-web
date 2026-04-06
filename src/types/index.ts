@@ -1,5 +1,5 @@
 export interface User {
-  id: number
+  userId: number
   email: string
   name: string
   role: string
@@ -61,12 +61,33 @@ export interface GroupMember {
   aliasName?: string
 }
 
+export interface GroupDetailMember {
+  userId: number
+  userName: string
+  userEmail: string
+  role: 'LEADER' | 'MEMBER'
+  aliasName?: string
+  joinedAt: string
+}
+
 export interface GroupDetail {
-  id: number
+  groupId: number
   groupName: string
+  groupStatus: string
   creatorUserId: number
-  status: string
-  members: GroupMember[]
+  leaderUserId: number
+  memberSummary: {
+    activeCount: number
+    leftCount: number
+    kickedCount: number
+  }
+  members: GroupDetailMember[]
+  pendingInvitations: Array<{
+    invitationId: number
+    email: string
+    invitedByUserId: number
+    expiresAt: string
+  }>
 }
 
 export interface MyGroupSummary {
@@ -75,6 +96,18 @@ export interface MyGroupSummary {
   aliasName: string
   myRole: 'LEADER' | 'MEMBER'
   status: 'ACTIVE' | 'DISBANDED'
+  activeMemberCount: number
+}
+
+export interface GroupInvitationSummary {
+  invitationId: number
+  groupId: number
+  groupName: string
+  status: string
+  expiresAt: string
+  invitedByUserId: number
+  invitedByUserName: string
+  memberEmails: string[]
 }
 
 export type FontId = 'noto' | 'gothic' | 'nanum' | 'doHyeon' | 'gowun' | 'blackHan' | 'sunflower' | 'gaegu' | 'jua'

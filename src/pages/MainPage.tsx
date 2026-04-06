@@ -128,17 +128,45 @@ export default function MainPage({ initialDate }: Props) {
             <span className="text-3xl">📋</span>
             <p className="text-sm text-gray-400">이 날의 할 일이 없어요</p>
           </div>
-        ) : (
-          todos.map(todo => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              onEdit={openEdit}
-            />
-          ))
-        )}
+        ) : (() => {
+          const personalTodos = todos.filter(t => !t.groupId)
+          const groupTodos = todos.filter(t => !!t.groupId)
+          const hasGroup = groupTodos.length > 0
+          return (
+            <>
+              {personalTodos.map(todo => (
+                <TodoItem
+                  key={todo.id}
+                  todo={todo}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                  onEdit={openEdit}
+                />
+              ))}
+              {hasGroup && (
+                <>
+                  <div className="flex items-center gap-2 pt-2 pb-1">
+                    <div className="flex-1 h-px bg-gray-100" />
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                      style={{ background: '#4AAFCC' }}>
+                      그룹
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
+                  {groupTodos.map(todo => (
+                    <TodoItem
+                      key={todo.id}
+                      todo={todo}
+                      onUpdate={handleUpdate}
+                      onDelete={handleDelete}
+                      onEdit={openEdit}
+                    />
+                  ))}
+                </>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {/* 추가 버튼 */}

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { FontProvider } from './contexts/FontContext'
+import { InvitationProvider } from './contexts/InvitationContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -61,7 +62,9 @@ export default function App() {
     <BrowserRouter>
       <FontProvider>
         <AuthProvider>
-          <AppRoutes />
+          <InvitationProvider>
+            <AppRoutes />
+          </InvitationProvider>
         </AuthProvider>
       </FontProvider>
     </BrowserRouter>

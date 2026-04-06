@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useInvitations } from '../../contexts/InvitationContext'
 
 const TABS = [
   {
@@ -45,6 +46,7 @@ const TABS = [
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { count } = useInvitations()
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 z-50"
@@ -58,7 +60,13 @@ export default function BottomNav() {
               onClick={() => navigate(tab.path)}
               className="flex-1 flex flex-col items-center gap-1 py-3 transition-opacity active:opacity-60"
             >
-              {tab.icon(active)}
+              <div className="relative">
+                {tab.icon(active)}
+                {tab.path === '/settings' && count > 0 && (
+                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white"
+                    style={{ background: '#4AAFCC' }} />
+                )}
+              </div>
               <span className="text-xs font-medium" style={{ color: active ? '#E85D2F' : '#AAAAAA' }}>
                 {tab.label}
               </span>
