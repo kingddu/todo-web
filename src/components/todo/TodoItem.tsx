@@ -85,8 +85,11 @@ export default function TodoItem({ todo, onUpdate, onDelete, onEdit }: Props) {
       {/* 삭제 버튼 */}
       <button onClick={handleDelete} disabled={loading}
         className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 active:opacity-60 transition-opacity">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M18 6L6 18M6 6l12 12" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" />
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <polyline points="3 6 5 6 21 6" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10 11v6M14 11v6" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" />
+          <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
     </div>

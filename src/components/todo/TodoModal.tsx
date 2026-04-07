@@ -24,7 +24,9 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
   const [title, setTitle] = useState(todo?.title ?? "");
   const [content, setContent] = useState(todo?.content ?? "");
   const [category, setCategory] = useState(todo?.category ?? "");
-  const [type, setType] = useState<TodoType>(todo?.type ?? "DATE_ONLY");
+  const [type, setType] = useState<TodoType>(
+    todo?.type === "DEADLINE" ? "RANGE" : (todo?.type ?? "DATE_ONLY"),
+  );
   const [startDate, setStartDate] = useState(todo?.startDate ?? date);
   const [endDate, setEndDate] = useState(todo?.endDate ?? date);
   const [carryOver, setCarryOver] = useState(todo?.carryOver ?? false);
@@ -55,7 +57,10 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
           eligible.sort((a, b) => {
             if (a.groupId === pinnedGroupId) return -1;
             if (b.groupId === pinnedGroupId) return 1;
-            return (a.aliasName || a.groupName).localeCompare(b.aliasName || b.groupName, "ko");
+            return (a.aliasName || a.groupName).localeCompare(
+              b.aliasName || b.groupName,
+              "ko",
+            );
           });
           setGroups(eligible);
         })
@@ -108,7 +113,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
           type,
           startDate,
           endDate,
-          carryOver: type === "DEADLINE" ? carryOver : false,
+          carryOver,
         };
         const res = await todoApi.patch(todo.id, payload);
         onSave(res.data);
@@ -120,7 +125,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
           type,
           startDate,
           endDate,
-          carryOver: type === "DEADLINE" ? carryOver : false,
+          carryOver,
           groupId: selectedGroupId,
         };
         const res = await todoApi.create(payload);
@@ -145,10 +150,26 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="px-5 pt-4 pb-3 flex-shrink-0 border-b border-gray-100">
+        <div className="px-5 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-800">
             {isEdit ? "Todo 수정" : "Todo 추가"}
           </h2>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center transition-colors active:bg-gray-100"
+            aria-label="닫기"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 6L6 18M6 6l12 12"
+                stroke="#9CA3AF"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* 스크롤 영역 */}
@@ -287,7 +308,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
 
           {/* 타입 선택 */}
           <div className="flex gap-2">
-            {(["DATE_ONLY", "RANGE", "DEADLINE"] as TodoType[]).map((t) => (
+            {(["DATE_ONLY", "RANGE"] as TodoType[]).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -299,7 +320,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
                   borderColor: type === t ? "#E85D2F" : "#E5E5E5",
                 }}
               >
-                {t === "DATE_ONLY" ? "하루" : t === "RANGE" ? "기간" : "마감일"}
+                {t === "DATE_ONLY" ? "하루" : "기간"}
               </button>
             ))}
           </div>
@@ -333,7 +354,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
             )}
           </div>
 
-          {type === "DEADLINE" && (
+          <div className="flex justify-end">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -343,7 +364,7 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
               />
               <span className="text-sm text-gray-600">미완료 시 이월</span>
             </label>
-          )}
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>

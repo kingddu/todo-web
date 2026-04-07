@@ -16,10 +16,18 @@ export default function Header() {
         onClick={() => navigate('/profile')}
         className="flex items-center gap-2 active:opacity-60 transition-opacity"
       >
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
-          style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
-          {displayName.charAt(0).toUpperCase()}
-        </div>
+        {user?.profileImageUrl ? (
+          <img
+            src={user.profileImageUrl}
+            className="w-9 h-9 rounded-full object-cover"
+            alt="프로필"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
+            style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+        )}
         <span className="text-sm font-medium text-gray-700 max-w-[120px] truncate">
           {displayName}
         </span>

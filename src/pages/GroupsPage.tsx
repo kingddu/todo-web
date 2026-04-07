@@ -20,7 +20,6 @@ export default function GroupsPage() {
     const v = localStorage.getItem(`pinnedGroupId_${user.userId}`);
     return v ? Number(v) : undefined;
   });
-  const [expandedGroupId, setExpandedGroupId] = useState<number | null>(null);
 
   const handleTogglePin = (groupId: number) => {
     if (!pinKey) return;
@@ -127,7 +126,10 @@ export default function GroupsPage() {
   const sortedGroups = [...groups].sort((a, b) => {
     if (a.groupId === pinnedGroupId) return -1;
     if (b.groupId === pinnedGroupId) return 1;
-    return (a.aliasName || a.groupName).localeCompare(b.aliasName || b.groupName, "ko");
+    return (a.aliasName || a.groupName).localeCompare(
+      b.aliasName || b.groupName,
+      "ko",
+    );
   });
 
   const hasInvitations = invitations.length > 0;
@@ -271,111 +273,143 @@ export default function GroupsPage() {
               )}
               {sortedGroups.map((g) => {
                 const isPinned = g.groupId === pinnedGroupId;
-                const isExpanded = g.groupId === expandedGroupId;
-                const iconColor = g.status === "DISBANDED" ? "#AAAAAA" : "#4AAFCC";
+                const iconColor =
+                  g.status === "DISBANDED" ? "#AAAAAA" : "#4AAFCC";
+
                 return (
                   <div
                     key={g.groupId}
                     className="bg-white rounded-2xl shadow-sm border-l-4 overflow-hidden cursor-pointer"
                     style={{
-                      borderLeftColor: isPinned ? "#E85D2F" : g.status === "DISBANDED" ? "#CCCCCC" : "#4AAFCC",
+                      borderLeftColor: isPinned
+                        ? "#E85D2F"
+                        : g.status === "DISBANDED"
+                          ? "#CCCCCC"
+                          : "#4AAFCC",
                     }}
-                    onClick={() => {
-                      if (isExpanded) setExpandedGroupId(null);
-                      else navigate(`/groups/${g.groupId}`);
-                    }}
+                    onClick={() => navigate(`/groups/${g.groupId}`)}
                   >
-                    {/* 가로 슬라이드 컨테이너 */}
-                    <div
-                      className="flex"
-                      style={{
-                        width: "200%",
-                        transform: isExpanded ? "translateX(-50%)" : "translateX(0)",
-                        transition: "transform 0.25s ease-out",
-                      }}
-                    >
-                      {/* 왼쪽: 기본 행 */}
-                      <div className="flex items-center gap-3 px-4 py-4" style={{ width: "50%" }}>
-                        {/* 아바타 */}
-                        <div
-                          className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: g.status === "DISBANDED" ? "#F5F5F5" : "#F0FAFD" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedGroupId(isExpanded ? null : g.groupId);
-                          }}
+                    <div className="flex items-center gap-3 px-4 py-4">
+                      {/* 프로필 */}
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background:
+                            g.status === "DISBANDED" ? "#F5F5F5" : "#F0FAFD",
+                        }}
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="9" cy="7" r="4" stroke={iconColor} strokeWidth="2" />
-                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          {isPinned && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#E85D2F" }}>
-                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none">
-                                <line x1="12" y1="13" x2="12" y2="21" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                                <path d="M6 13h12M9 4h6v5l2 4H7l2-4z" fill="white" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-800 truncate">
-                              {g.aliasName || g.groupName}
-                            </p>
-                            {statusBadge(g.status)}
-                          </div>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {g.aliasName ? `원래 이름: ${g.groupName}` : ""}{g.aliasName ? " · " : ""}{roleLabel(g.myRole)}
-                          </p>
-                        </div>
-
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <path d="M9 18l6-6-6-6" stroke="#AAAAAA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path
+                            d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"
+                            stroke={iconColor}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <circle
+                            cx="9"
+                            cy="7"
+                            r="4"
+                            stroke={iconColor}
+                            strokeWidth="2"
+                          />
+                          <path
+                            d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+                            stroke={iconColor}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
                         </svg>
                       </div>
 
-                      {/* 오른쪽: 액션 버튼 */}
-                      <div
-                        className="flex items-center justify-center gap-8 px-4 py-4"
-                        style={{ width: "50%" }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {/* 카메라 (향후 구현) */}
+                      {/* 텍스트 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-800 truncate">
+                            {g.aliasName || g.groupName}
+                          </p>
+                          {statusBadge(g.status)}
+                        </div>
+
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                          {g.aliasName ? `원래 이름: ${g.groupName}` : ""}
+                          {g.aliasName ? " · " : ""}
+                          {roleLabel(g.myRole)}
+                        </p>
+                      </div>
+
+                      {/* 오른쪽 액션: 핀 -> 화살표 */}
+                      <div className="flex items-center flex-shrink-0 pr-1">
                         <button
-                          className="flex flex-col items-center gap-1.5 opacity-35"
-                          disabled
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePin(g.groupId);
+                          }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+                          style={{
+                            background: isPinned ? "#FFF0EC" : "transparent",
+                          }}
+                          aria-label={isPinned ? "고정 해제" : "그룹 고정"}
+                          title={isPinned ? "고정 해제" : "그룹 고정"}
                         >
-                          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
-                                stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <circle cx="12" cy="13" r="4" stroke="#555" strokeWidth="2" />
-                            </svg>
-                          </div>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <line
+                              x1="12"
+                              y1="14"
+                              x2="12"
+                              y2="21"
+                              stroke={isPinned ? "#E85D2F" : "#B8B8BD"}
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                            <line
+                              x1="6"
+                              y1="14"
+                              x2="18"
+                              y2="14"
+                              stroke={isPinned ? "#E85D2F" : "#B8B8BD"}
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d="M9 4h6v5l2.5 5H6.5L9 9z"
+                              stroke={isPinned ? "#E85D2F" : "#B8B8BD"}
+                              fill={isPinned ? "#FFF0EC" : "none"}
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
                         </button>
 
-                        {/* 고정 핀 */}
-                        <button
-                          className="flex flex-col items-center gap-1.5"
-                          onClick={() => { handleTogglePin(g.groupId); setExpandedGroupId(null); }}
-                        >
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center"
-                            style={{ background: isPinned ? "#FFF0EC" : "#F5F5F5" }}
+                        <div className="w-6 h-10 ml-2 flex items-center justify-center pointer-events-none">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
                           >
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                              <line x1="12" y1="14" x2="12" y2="21" stroke={isPinned ? "#E85D2F" : "#888"} strokeWidth="2" strokeLinecap="round"/>
-                              <line x1="6" y1="14" x2="18" y2="14" stroke={isPinned ? "#E85D2F" : "#888"} strokeWidth="2" strokeLinecap="round"/>
-                              <path d="M9 4h6v5l2.5 5H6.5L9 9z"
-                                stroke={isPinned ? "#E85D2F" : "#888"}
-                                fill={isPinned ? "#FFF0EC" : "#F0F0F0"}
-                                strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        </button>
+                            <path
+                              d="M9 18l6-6-6-6"
+                              stroke="#AAAAAA"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -418,7 +452,9 @@ export default function GroupsPage() {
                 </svg>
               </div>
 
-              <p className="text-sm text-gray-400">아직 참여 중인 그룹이 없어요</p>
+              <p className="text-sm text-gray-400">
+                아직 참여 중인 그룹이 없어요
+              </p>
 
               <button
                 onClick={() => setShowCreate(true)}
@@ -543,7 +579,6 @@ export default function GroupsPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

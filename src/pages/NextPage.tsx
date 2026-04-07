@@ -9,10 +9,8 @@ export default function NextPage() {
 
   const today = dayjs()
   const tomorrow = today.add(1, 'day')
-  // 돌아오는 토요일: 토요일이면 다음 토요일(+7), 나머지는 이번 주 토요일
   const daysToSaturday = today.day() === 6 ? 7 : (6 - today.day())
   const comingSaturday = today.add(daysToSaturday, 'day')
-  // 일요일이면 "이번 주 토~일", 토요일이면 "다음 주 일~토" 라벨
   const dayOfWeek = today.day()
 
   const fromDate = tomorrow.format('YYYY-MM-DD')
@@ -27,6 +25,15 @@ export default function NextPage() {
       })
       .finally(() => setLoading(false))
   }, [fromDate, toDate])
+
+  const handleDelete = async (todoId: number) => {
+    try {
+      await todoApi.delete(todoId)
+      setTodos(prev => prev.filter(t => t.id !== todoId))
+    } catch {
+      alert('삭제에 실패했어요.')
+    }
+  }
 
   const grouped: Record<string, Todo[]> = {}
   for (const todo of todos) {
@@ -45,7 +52,7 @@ export default function NextPage() {
   }
 
   return (
-    <div className="px-4 py-5 flex flex-col gap-4">
+    <div className="px-4 py-5 flex flex-col gap-4 pb-20">
       <div>
         <h1 className="text-lg font-bold text-gray-800">다음</h1>
         <p className="text-xs text-gray-400 mt-0.5">
@@ -77,7 +84,7 @@ export default function NextPage() {
               {grouped[dateStr].map(todo => (
                 <div
                   key={todo.id}
-                  className="bg-white rounded-2xl px-4 py-3 flex items-start gap-3 shadow-sm border-l-4"
+                  className="bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm border-l-4"
                   style={{ borderLeftColor: todo.groupId ? '#4AAFCC' : '#E85D2F' }}
                 >
                   <div className="flex-1 min-w-0">
@@ -91,12 +98,26 @@ export default function NextPage() {
                       </p>
                     )}
                   </div>
+
                   {todo.completed && (
                     <span className="text-xs px-2 py-1 rounded-full flex-shrink-0"
                       style={{ background: '#F0FDF4', color: '#16A34A' }}>
                       완료
                     </span>
                   )}
+
+                  <button
+                    onClick={() => handleDelete(todo.id)}
+                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full active:opacity-60"
+                    style={{ background: '#FFE0DB' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <polyline points="3 6 5 6 21 6" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M10 11v6M14 11v6" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>

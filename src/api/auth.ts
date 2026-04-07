@@ -20,4 +20,12 @@ export const authApi = {
 
   updateProfile: (data: { name: string; email: string }) =>
     client.patch<User>('/auth/me', data),
+
+  uploadProfileImage: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return client.post<User>('/auth/me/profile-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }

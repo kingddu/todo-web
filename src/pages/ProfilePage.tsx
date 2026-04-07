@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { todoApi } from '../api/todo'
+import { authApi } from '../api/auth'
 import dayjs from 'dayjs'
 import type { Todo } from '../types'
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, refresh } = useAuth()
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   const [weekTodos, setWeekTodos] = useState<Todo[]>([])
   const [yearTodos, setYearTodos] = useState<Todo[]>([])
+
+  const handleImageClick = () => fileInputRef.current?.click()
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      await authApi.uploadProfileImage(file)
+      await refresh()
+    } catch {
+      alert('이미지 업로드에 실패했어요.')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
 
   const today = dayjs()
   const weekStart = today.startOf('week') // 일요일
@@ -69,10 +89,43 @@ export default function ProfilePage() {
             <path d="M15 18l-6-6 6-6" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow"
-          style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
-          {displayName.charAt(0).toUpperCase()}
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <button
+          onClick={handleImageClick}
+          disabled={uploading}
+          className="relative active:opacity-70"
+        >
+          {user?.profileImageUrl ? (
+            <img
+              src={user.profileImageUrl}
+              className="w-16 h-16 rounded-full object-cover shadow"
+              alt="프로필"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow"
+              style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center">
+            {uploading ? (
+              <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
+                style={{ borderColor: '#E85D2F', borderTopColor: 'transparent' }} />
+            ) : (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                  stroke="#E85D2F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="13" r="4" stroke="#E85D2F" strokeWidth="2" />
+              </svg>
+            )}
+          </div>
+        </button>
         <p className="text-base font-bold text-gray-800">{user?.name ?? displayName}</p>
         <p className="text-xs text-gray-400">{user?.email}</p>
       </div>

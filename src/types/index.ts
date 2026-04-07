@@ -4,6 +4,7 @@ export interface User {
   name: string
   role: string
   status: string
+  profileImageUrl?: string
 }
 
 export type TodoType = 'DATE_ONLY' | 'RANGE' | 'DEADLINE'
@@ -67,6 +68,7 @@ export interface GroupDetailMember {
   userEmail: string
   role: 'LEADER' | 'MEMBER'
   aliasName?: string
+  profileImageUrl?: string
   joinedAt: string
 }
 

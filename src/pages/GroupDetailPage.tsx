@@ -131,7 +131,9 @@ export default function GroupDetailPage() {
 
   const handleLeave = async () => {
     if (isLeader) {
-      alert("그룹원에게 그룹장을 위임하고 나가셔야 합니다. 그룹장을 위임해주세요.");
+      alert(
+        "그룹원에게 그룹장을 위임하고 나가셔야 합니다. 그룹장을 위임해주세요.",
+      );
       return;
     }
     if (!confirm("그룹에서 나갈까요?")) return;
@@ -309,17 +311,25 @@ export default function GroupDetailPage() {
                 key={member.userId}
                 className="bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm"
               >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                  style={{
-                    background:
-                      member.role === "LEADER"
-                        ? "linear-gradient(135deg, #E85D2F, #FF7B52)"
-                        : "linear-gradient(135deg, #4AAFCC, #72C9E0)",
-                  }}
-                >
-                  {member.userName.charAt(0)}
-                </div>
+                {member.profileImageUrl ? (
+                  <img
+                    src={member.profileImageUrl}
+                    className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                    alt={member.userName}
+                  />
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                    style={{
+                      background:
+                        member.role === "LEADER"
+                          ? "linear-gradient(135deg, #E85D2F, #FF7B52)"
+                          : "linear-gradient(135deg, #4AAFCC, #72C9E0)",
+                    }}
+                  >
+                    {member.userName.charAt(0)}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-sm font-medium text-gray-800">
@@ -344,26 +354,32 @@ export default function GroupDetailPage() {
                   >
                     {member.role === "LEADER" ? "그룹장" : "멤버"}
                   </span>
+
                   {isLeader && isActive && !isMe && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() =>
-                          handleTransferLeader(member.userId)
-                        }
-                        className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500"
-                      >
-                        위임
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleKick(member.userId, member.userName)
-                        }
-                        className="text-xs px-2 py-1 rounded-lg border text-red-400"
-                        style={{ borderColor: "#FFDDDD" }}
-                      >
-                        강퇴
-                      </button>
-                    </div>
+                    <>
+                      <div
+                        className="w-px h-3.5 rounded-full"
+                        style={{ background: "#9CA3AF" }}
+                        aria-hidden="true"
+                      />
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleTransferLeader(member.userId)}
+                          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500"
+                        >
+                          위임
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleKick(member.userId, member.userName)
+                          }
+                          className="text-xs px-2 py-1 rounded-lg border text-red-400"
+                          style={{ borderColor: "#FFDDDD" }}
+                        >
+                          강퇴
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -418,7 +434,28 @@ export default function GroupDetailPage() {
             >
               <div className="px-5 pt-4 pb-3 flex-shrink-0">
                 <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-                <h2 className="text-base font-bold text-gray-800">멤버 초대</h2>
+
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-800">
+                    멤버 초대
+                  </h2>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowInvite(false)}
+                    className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center transition-colors active:bg-gray-100"
+                    aria-label="닫기"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M18 6L6 18M6 6l12 12"
+                        stroke="#9CA3AF"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="px-5 pb-3 flex-1 min-h-0 overflow-y-auto overscroll-contain">
