@@ -4,11 +4,10 @@ import { useInvitations } from '../../contexts/InvitationContext'
 const TABS = [
   {
     path: '/record',
-    label: '기록',
+    label: '이전',
     icon: (active: boolean) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" stroke={active ? '#E85D2F' : '#AAAAAA'} strokeWidth="2" />
-        <path d="M12 7v5l3 3" stroke={active ? '#E85D2F' : '#AAAAAA'} strokeWidth="2" strokeLinecap="round" />
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke={active ? '#E85D2F' : '#AAAAAA'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -57,7 +56,14 @@ export default function BottomNav() {
           return (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() =>
+                navigate(
+                  tab.path,
+                  tab.path === '/today'
+                    ? { state: { resetTs: Date.now() } }
+                    : undefined,
+                )
+              }
               className="flex-1 flex flex-col items-center gap-1 py-3 transition-opacity active:opacity-60"
             >
               <div className="relative">

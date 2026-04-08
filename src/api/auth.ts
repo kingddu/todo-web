@@ -21,6 +21,12 @@ export const authApi = {
   updateProfile: (data: { name: string; email: string }) =>
     client.patch<User>('/auth/me', data),
 
+  verifyPassword: (password: string) =>
+    client.post('/auth/me/verify-password', { password }),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    client.patch('/auth/me/password', data),
+
   uploadProfileImage: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

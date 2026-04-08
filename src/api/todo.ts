@@ -1,5 +1,5 @@
 import client from './client'
-import type { Todo, TodoCreatePayload, TodoPatchPayload } from '../types'
+import type { Todo, TodoCreatePayload, TodoPatchPayload, TodoEditLog } from '../types'
 
 export const todoApi = {
   create: (data: TodoCreatePayload) =>
@@ -19,4 +19,10 @@ export const todoApi = {
 
   uncomplete: (todoId: number) =>
     client.patch<Todo>(`/todos/${todoId}/uncomplete`),
+
+  search: (q: string) =>
+    client.get<Todo[]>('/todos/search', { params: { q } }),
+
+  getLogs: (todoId: number) =>
+    client.get<TodoEditLog[]>(`/todos/${todoId}/logs`),
 }

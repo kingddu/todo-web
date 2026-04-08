@@ -2,12 +2,73 @@ import { useState, useRef, useEffect } from "react";
 import { useFont } from "../contexts/FontContext";
 import { useNavigate } from "react-router-dom";
 import { useInvitations } from "../contexts/InvitationContext";
+import { useAuth } from "../contexts/AuthContext";
+
+export function editLogKey(userId: number, type: "personal" | "group") {
+  return `editLog_${type}_${userId}`;
+}
+
+export function getEditLogVisible(userId: number, type: "personal" | "group") {
+  const raw = localStorage.getItem(editLogKey(userId, type));
+  return raw === null ? type === "group" : raw === "true"; // 개인 기본OFF, 그룹 기본ON
+}
+
+function Toggle({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      role="switch"
+      aria-checked={value}
+      className="relative inline-flex flex-shrink-0 items-center overflow-hidden transition-colors duration-200"
+      style={{
+        width: 48,
+        height: 28,
+        borderRadius: 9999,
+        backgroundColor: value ? "#E85D2F" : "#D1D5DB",
+      }}
+    >
+      <span
+        className="absolute top-[3px] left-[3px] rounded-full bg-white shadow-sm transition-transform duration-200"
+        style={{
+          width: 22,
+          height: 22,
+          transform: value ? "translateX(20px)" : "translateX(0)",
+        }}
+      />
+    </button>
+  );
+}
 
 export default function SettingsPage() {
   const { fontId, setFontId, fonts } = useFont();
   const navigate = useNavigate();
   const { count } = useInvitations();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const [showPersonalLog, setShowPersonalLog] = useState(() =>
+    user ? getEditLogVisible(user.userId, "personal") : false,
+  );
+  const [showGroupLog, setShowGroupLog] = useState(() =>
+    user ? getEditLogVisible(user.userId, "group") : true,
+  );
+
+  const handlePersonalToggle = (v: boolean) => {
+    setShowPersonalLog(v);
+    if (user)
+      localStorage.setItem(editLogKey(user.userId, "personal"), String(v));
+  };
+  const handleGroupToggle = (v: boolean) => {
+    setShowGroupLog(v);
+    if (user) localStorage.setItem(editLogKey(user.userId, "group"), String(v));
+  };
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState(260);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -92,8 +153,10 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium text-gray-800">그룹 관리</p>
               {count > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full text-white font-semibold"
-                  style={{ background: '#E85D2F' }}>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full text-white font-semibold"
+                  style={{ background: "#E85D2F" }}
+                >
                   새로운 그룹초대 {count}
                 </span>
               )}
@@ -113,6 +176,34 @@ export default function SettingsPage() {
             />
           </svg>
         </button>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">
+          수정 이력 보기 설정
+        </h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* 개인 */}
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-50">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-800">개인 Todo</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                내가 만든 개인 할 일의 수정됨 표시
+              </p>
+            </div>
+            <Toggle value={showPersonalLog} onChange={handlePersonalToggle} />
+          </div>
+          {/* 그룹 */}
+          <div className="flex items-center justify-between px-4 py-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-800">그룹 Todo</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                그룹에 공유된 할 일의 수정됨 표시
+              </p>
+            </div>
+            <Toggle value={showGroupLog} onChange={handleGroupToggle} />
+          </div>
+        </div>
       </section>
 
       <section>

@@ -24,6 +24,20 @@ export interface Todo {
   groupId?: number
   groupName?: string
   groupDisbanded: boolean
+  editCount: number
+}
+
+export interface TodoEditLogChange {
+  label: string
+  before: string
+  after: string
+}
+
+export interface TodoEditLog {
+  logId: number
+  changes: TodoEditLogChange[]
+  actorEmail: string
+  editedAt: string
 }
 
 export interface TodoCreatePayload {

@@ -9,6 +9,8 @@ import type {
 import { todoApi } from "../../api/todo";
 import { groupApi } from "../../api/group";
 import { useAuth } from "../../contexts/AuthContext";
+import TodoEditLogModal from "./TodoEditLogModal";
+import { getEditLogVisible } from "../../pages/SettingsPage";
 
 interface Props {
   date: string;
@@ -20,6 +22,13 @@ interface Props {
 export default function TodoModal({ date, todo, onClose, onSave }: Props) {
   const isEdit = !!todo;
   const { user } = useAuth();
+  const [showLogModal, setShowLogModal] = useState(false);
+  const editBadgeVisible =
+    isEdit &&
+    todo &&
+    todo.editCount > 0 &&
+    !!user &&
+    getEditLogVisible(user.userId, todo.groupId ? "group" : "personal");
 
   const [title, setTitle] = useState(todo?.title ?? "");
   const [content, setContent] = useState(todo?.content ?? "");
@@ -140,6 +149,14 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
   };
 
   return (
+    <>
+    {showLogModal && todo && (
+      <TodoEditLogModal
+        todoId={todo.id}
+        todoTitle={todo.title}
+        onClose={() => setShowLogModal(false)}
+      />
+    )}
     <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
       <div
         className="absolute inset-x-4 mx-auto max-w-[480px] overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col"
@@ -151,9 +168,21 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
       >
         {/* 헤더 */}
         <div className="px-5 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-800">
-            {isEdit ? "Todo 수정" : "Todo 추가"}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-800">
+              {isEdit ? "Todo 수정" : "Todo 추가"}
+            </h2>
+            {editBadgeVisible && (
+              <button
+                type="button"
+                onClick={() => setShowLogModal(true)}
+                className="text-[10px] px-1.5 py-[2px] rounded-full active:opacity-60"
+                style={{ background: '#FFF3F0', color: '#E85D2F' }}
+              >
+                수정됨{todo!.editCount > 1 ? ` ${todo!.editCount}` : ''}
+              </button>
+            )}
+          </div>
 
           <button
             type="button"
@@ -382,5 +411,6 @@ export default function TodoModal({ date, todo, onClose, onSave }: Props) {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -97,7 +97,7 @@ export default function RecordPage() {
   return (
     <div className="px-4 py-5 flex flex-col gap-4 pb-20">
       <div>
-        <h1 className="text-lg font-bold text-gray-800">기록</h1>
+        <h1 className="text-lg font-bold text-gray-800">이전</h1>
         <p className="text-xs text-gray-400 mt-0.5">
           {periodLabel} ({fromDay.format('M/D')} ~ {toDay.format('M/D')}) 미완료 할 일
         </p>
