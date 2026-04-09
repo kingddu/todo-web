@@ -89,6 +89,7 @@ export interface GroupDetailMember {
 export interface GroupDetail {
   groupId: number
   groupName: string
+  description?: string
   groupStatus: string
   creatorUserId: number
   leaderUserId: number
@@ -101,8 +102,12 @@ export interface GroupDetail {
   pendingInvitations: Array<{
     invitationId: number
     email: string
+    userId: number
+    userName: string
+    profileImageUrl?: string
     invitedByUserId: number
     expiresAt: string
+    createdAt: string
   }>
 }
 
@@ -119,11 +124,12 @@ export interface GroupInvitationSummary {
   invitationId: number
   groupId: number
   groupName: string
+  description?: string
   status: string
   expiresAt: string
   invitedByUserId: number
   invitedByUserName: string
-  memberEmails: string[]
+  invitedByUserEmail: string
 }
 
 export type FontId = 'noto' | 'gothic' | 'nanum' | 'doHyeon' | 'gowun' | 'blackHan' | 'sunflower' | 'gaegu' | 'jua'

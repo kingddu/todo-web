@@ -20,6 +20,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (authLoading) return
     setError("");
     setLoading(true);
     try {
@@ -60,7 +61,7 @@ export default function LoginPage() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">Todo</h1>
+        <h1 className="text-2xl font-bold text-gray-800">TodoKing</h1>
         <p className="text-sm text-gray-400 mt-1">
           채워 나가는 DAY, 풍성해지는 LIFE☘️
         </p>
@@ -91,10 +92,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || authLoading}
           className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-1 transition-opacity active:opacity-80 shadow-md"
           style={{
-            background: loading
+            background: loading || authLoading
               ? "#CCCCCC"
               : "linear-gradient(135deg, #E85D2F, #FF7B52)",
           }}

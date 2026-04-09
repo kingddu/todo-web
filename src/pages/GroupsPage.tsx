@@ -35,6 +35,7 @@ export default function GroupsPage() {
   // 그룹 생성 모달
   const [showCreate, setShowCreate] = useState(false);
   const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [inviteInput, setInviteInput] = useState("");
   const [inviteEmails, setInviteEmails] = useState<string[]>([]);
   const [createError, setCreateError] = useState("");
@@ -72,9 +73,10 @@ export default function GroupsPage() {
     setCreateError("");
 
     try {
-      await groupApi.create({ groupName: groupName.trim(), inviteEmails });
+      await groupApi.create({ groupName: groupName.trim(), description: groupDescription.trim() || undefined, inviteEmails });
       setShowCreate(false);
       setGroupName("");
+      setGroupDescription("");
       setInviteEmails([]);
       loadGroups();
     } catch (err: any) {
@@ -201,45 +203,27 @@ export default function GroupsPage() {
                     className="bg-white rounded-2xl px-4 py-4 shadow-sm border-l-4 flex flex-col gap-3"
                     style={{ borderLeftColor: "#E85D2F" }}
                   >
-                    {/* 그룹명 + 초대자 */}
+                    {/* 그룹명 + 소개 + 초대자 */}
                     <div>
                       <p className="text-base font-bold text-gray-800">
                         {inv.groupName}
                       </p>
+                      {inv.description && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          소개:{" "}
+                          <span className="font-medium">{inv.description}</span>
+                        </p>
+                      )}
                       <p className="text-xs text-gray-400 mt-0.5">
                         초대자:{" "}
                         <span className="font-medium text-gray-600">
                           {inv.invitedByUserName}
                         </span>
+                        <span className="ml-1 text-gray-400">
+                          {inv.invitedByUserEmail}
+                        </span>
                       </p>
                     </div>
-
-                    {/* 멤버 이메일 목록 */}
-                    {inv.memberEmails.length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-400 mb-1.5">
-                          참여 중인 멤버
-                        </p>
-                        <div className="flex flex-col gap-1">
-                          {inv.memberEmails.map((email) => (
-                            <div
-                              key={email}
-                              className="flex items-center gap-2"
-                            >
-                              <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white"
-                                style={{ background: "#4AAFCC" }}
-                              >
-                                {email[0].toUpperCase()}
-                              </div>
-                              <span className="text-xs text-gray-600">
-                                {email}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* 승낙 / 거절 버튼 */}
                     <div className="flex gap-2 pt-1">
@@ -496,6 +480,19 @@ export default function GroupsPage() {
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
               />
+              <div className="relative">
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-14 text-sm outline-none transition-colors"
+                  style={{ outlineColor: "#4AAFCC" }}
+                  placeholder="그룹 소개 (선택, 25자 이내)"
+                  value={groupDescription}
+                  maxLength={25}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 tabular-nums">
+                  {groupDescription.length}/25
+                </span>
+              </div>
 
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">

@@ -4,6 +4,16 @@ import { groupApi } from "../api/group";
 import { useAuth } from "../contexts/AuthContext";
 import type { GroupDetail } from "../types";
 
+function validateEmail(email: string): string | null {
+  if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$/.test(email))
+    return "올바른 이메일 형식이 아니에요. (예: example@gmail.com)";
+  if (/\.\./.test(email)) return "이메일에 점(.)이 연속으로 올 수 없어요.";
+  const domain = email.split("@")[1];
+  if (domain.startsWith(".") || domain.endsWith(".") || domain.startsWith("-"))
+    return "도메인 형식이 올바르지 않아요.";
+  return null;
+}
+
 export default function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
@@ -19,12 +29,22 @@ export default function GroupDetailPage() {
   const [aliasLoading, setAliasLoading] = useState(false);
   const [aliasError, setAliasError] = useState("");
 
+  // 그룹 소개 편집
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [newDesc, setNewDesc] = useState("");
+  const [descLoading, setDescLoading] = useState(false);
+  const [descError, setDescError] = useState("");
+
+  // 멤버 필터
+  const [filter, setFilter] = useState<"all" | "members" | "pending">("all");
+
   // 초대
   const [showInvite, setShowInvite] = useState(false);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteEmails, setInviteEmails] = useState<string[]>([]);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState("");
+  const [addEmailError, setAddEmailError] = useState("");
 
   const id = Number(groupId);
 
@@ -84,11 +104,16 @@ export default function GroupDetailPage() {
 
   const addEmail = () => {
     const email = inviteInput.trim();
-    if (!email || inviteEmails.includes(email)) {
-      setInviteInput("");
+    setAddEmailError("");
+    if (!email) return;
+    const err = validateEmail(email);
+    if (err) {
+      setAddEmailError(err);
       return;
     }
-    setInviteEmails((prev) => [...prev, email]);
+    if (!inviteEmails.includes(email)) {
+      setInviteEmails((prev) => [...prev, email]);
+    }
     setInviteInput("");
   };
 
@@ -103,6 +128,7 @@ export default function GroupDetailPage() {
       await groupApi.invite(id, inviteEmails);
       setShowInvite(false);
       setInviteEmails([]);
+      load();
     } catch {
       setInviteError("초대 발송에 실패했어요.");
     } finally {
@@ -142,6 +168,30 @@ export default function GroupDetailPage() {
       navigate("/groups", { replace: true });
     } catch {
       alert("그룹 나가기에 실패했어요.");
+    }
+  };
+
+  const handleChangeDescription = async () => {
+    setDescLoading(true);
+    setDescError("");
+    try {
+      await groupApi.changeDescription(id, newDesc.trim());
+      setEditingDesc(false);
+      load();
+    } catch {
+      setDescError("소개 변경에 실패했어요.");
+    } finally {
+      setDescLoading(false);
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: number) => {
+    if (!confirm("이 초대를 취소할까요?")) return;
+    try {
+      await groupApi.cancelInvitation(id, invitationId);
+      load();
+    } catch {
+      alert("초대 취소에 실패했어요.");
     }
   };
 
@@ -191,20 +241,39 @@ export default function GroupDetailPage() {
     );
   }
 
-  // 멤버 정렬: 그룹장 → 본인 → 나머지
-  const sortedMembers = [...detail.members].sort((a, b) => {
-    if (a.role === "LEADER" && b.role !== "LEADER") return -1;
-    if (b.role === "LEADER" && a.role !== "LEADER") return 1;
-    if (a.userId === user?.userId && b.userId !== user?.userId) return -1;
-    if (b.userId === user?.userId && a.userId !== user?.userId) return 1;
-    return 0;
-  });
+  // 그룹장 → 멤버(joinedAt 빠른 순, 백엔드 정렬 유지) → 대기중(createdAt 빠른 순, 백엔드 정렬 유지)
+  type DisplayItem =
+    | { kind: "member"; data: (typeof detail.members)[0] }
+    | { kind: "pending"; data: (typeof detail.pendingInvitations)[0] };
+
+  const leaderItems: DisplayItem[] = detail.members
+    .filter((m) => m.role === "LEADER")
+    .map((m) => ({ kind: "member" as const, data: m }));
+  const memberItems: DisplayItem[] = detail.members
+    .filter((m) => m.role !== "LEADER")
+    .map((m) => ({ kind: "member" as const, data: m }));
+  const pendingItems: DisplayItem[] = detail.pendingInvitations.map((p) => ({
+    kind: "pending" as const,
+    data: p,
+  }));
+
+  const allItems: DisplayItem[] = [
+    ...leaderItems,
+    ...memberItems,
+    ...pendingItems,
+  ];
+  const displayItems =
+    filter === "members"
+      ? [...leaderItems, ...memberItems]
+      : filter === "pending"
+        ? pendingItems
+        : allItems;
 
   return (
     <div className="px-4 py-5 flex flex-col gap-5 pb-20">
       {/* 헤더 */}
-      <div className="flex items-center gap-2">
-        <button onClick={() => navigate(-1)} className="p-1">
+      <div className="flex gap-2">
+        <button onClick={() => navigate(-1)} className="p-1 mt-0.5 shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
               d="M15 18l-6-6 6-6"
@@ -216,95 +285,289 @@ export default function GroupDetailPage() {
           </svg>
         </button>
 
-        {editingAlias && isActive ? (
-          <div className="flex-1 flex flex-col gap-1">
-            <div className="flex gap-2">
-              <input
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
-                placeholder={detail.groupName}
-                value={newAlias}
-                onChange={(e) => {
-                  setNewAlias(e.target.value);
-                  setAliasError("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleChangeAlias();
-                }}
-                autoFocus
-              />
-              <button
-                onClick={handleChangeAlias}
-                disabled={aliasLoading}
-                className="px-3 py-2 rounded-xl text-white text-xs font-medium"
-                style={{ background: "#4AAFCC" }}
-              >
-                저장
-              </button>
-              <button
-                onClick={() => {
-                  setEditingAlias(false);
-                  setAliasError("");
-                }}
-                className="px-3 py-2 rounded-xl text-gray-500 text-xs border border-gray-200"
-              >
-                취소
-              </button>
+        <div className="flex-1 min-w-0">
+          {editingAlias && isActive ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
+                  placeholder={detail.groupName}
+                  value={newAlias}
+                  onChange={(e) => {
+                    setNewAlias(e.target.value);
+                    setAliasError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleChangeAlias();
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleChangeAlias}
+                  disabled={aliasLoading}
+                  className="px-3 py-2 rounded-xl text-white text-xs font-medium"
+                  style={{ background: "#4AAFCC" }}
+                >
+                  저장
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingAlias(false);
+                    setAliasError("");
+                  }}
+                  className="px-3 py-2 rounded-xl text-gray-500 text-xs border border-gray-200"
+                >
+                  취소
+                </button>
+              </div>
+              {aliasError && (
+                <p className="text-xs text-red-500 px-1">{aliasError}</p>
+              )}
             </div>
-            {aliasError && (
-              <p className="text-xs text-red-500 px-1">{aliasError}</p>
-            )}
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center gap-2">
-            <h1 className="text-lg font-bold text-gray-800">{displayName}</h1>
-            {detail.groupStatus === "DISBANDED" && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
-                해산
-              </span>
-            )}
-            {isActive && (
-              <button onClick={() => setEditingAlias(true)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
-                    stroke="#AAAAAA"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-                    stroke="#AAAAAA"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-gray-800">{displayName}</h1>
+              {detail.groupStatus === "DISBANDED" && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
+                  해산
+                </span>
+              )}
+              {isActive && (
+                <button onClick={() => setEditingAlias(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                      stroke="#AAAAAA"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                      stroke="#AAAAAA"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+
+          {editingDesc ? (
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
+                  placeholder="그룹 소개를 입력하세요 (최대 25자)"
+                  maxLength={25}
+                  value={newDesc}
+                  onChange={(e) => {
+                    setNewDesc(e.target.value);
+                    setDescError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleChangeDescription();
+                    if (e.key === "Escape") {
+                      setEditingDesc(false);
+                      setDescError("");
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleChangeDescription}
+                  disabled={descLoading}
+                  className="px-3 py-2 rounded-xl text-white text-xs font-medium"
+                  style={{ background: "#4AAFCC" }}
+                >
+                  저장
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingDesc(false);
+                    setDescError("");
+                  }}
+                  className="px-3 py-2 rounded-xl text-gray-500 text-xs border border-gray-200"
+                >
+                  취소
+                </button>
+              </div>
+              <div className="flex items-center justify-between px-1">
+                {descError ? (
+                  <p className="text-xs text-red-500">{descError}</p>
+                ) : (
+                  <span />
+                )}
+                <span className="text-xs text-gray-400">
+                  {newDesc.length}/25
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mt-2">
+              {detail.description ? (
+                <p className="text-sm text-gray-500">{detail.description}</p>
+              ) : (
+                isLeader &&
+                isActive && (
+                  <p className="text-sm text-gray-400 italic">소개 없음</p>
+                )
+              )}
+              {isLeader && isActive && (
+                <button
+                  onClick={() => {
+                    setNewDesc(detail.description ?? "");
+                    setEditingDesc(true);
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                      stroke="#CCCCCC"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                      stroke="#CCCCCC"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 그룹 소개 */}
 
       {/* 멤버 목록 */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-500">
-            멤버 {detail.members.length}명
-          </h2>
-          {isLeader && detail?.groupStatus !== "DISBANDED" && (
-            <button
-              onClick={() => setShowInvite(true)}
-              className="text-xs px-3 py-1.5 rounded-lg text-white font-medium"
-              style={{ background: "#4AAFCC" }}
-            >
-              + 초대
-            </button>
-          )}
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-500">
+              멤버 {detail.members.length}명
+              {detail.pendingInvitations.length > 0 && (
+                <span className="font-normal text-gray-400">
+                  {" "}
+                  · 대기중 {detail.pendingInvitations.length}명
+                </span>
+              )}
+            </h2>
+            {isLeader && detail?.groupStatus !== "DISBANDED" && (
+              <button
+                onClick={() => setShowInvite(true)}
+                className="text-xs px-3 py-1.5 rounded-lg text-white font-medium"
+                style={{ background: "#4AAFCC" }}
+              >
+                + 초대
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 self-start">
+            {(
+              [
+                { key: "all", label: "전체" },
+                { key: "members", label: "멤버" },
+                {
+                  key: "pending",
+                  label: `대기중${detail.pendingInvitations.length > 0 ? ` ${detail.pendingInvitations.length}` : ""}`,
+                },
+              ] as const
+            ).map((item) => {
+              const active = filter === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setFilter(item.key)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.98]"
+                  style={{
+                    background: active ? "#4AAFCC" : "#F3F4F6",
+                    color: active ? "white" : "#6B7280",
+                    border: active ? "1px solid #4AAFCC" : "1px solid #E5E7EB",
+                    boxShadow: active
+                      ? "0 2px 6px rgba(74, 175, 204, 0.15)"
+                      : "none",
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          {sortedMembers.map((member) => {
+          {displayItems.map((item) => {
+            if (item.kind === "pending") {
+              const p = item.data;
+              return (
+                <div
+                  key={`pending-${p.invitationId}`}
+                  className="bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm"
+                >
+                  {p.profileImageUrl ? (
+                    <img
+                      src={p.profileImageUrl}
+                      className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                      alt={p.userName}
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      style={{
+                        background: "linear-gradient(135deg, #D1D5DB, #9CA3AF)",
+                      }}
+                    >
+                      {p.userName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-500">
+                      {p.userName}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "#BBBBBB" }}>
+                      {p.email}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: "#F3F4F6", color: "#9CA3AF" }}
+                    >
+                      대기중
+                    </span>
+
+                    {isLeader && isActive && (
+                      <>
+                        <div
+                          className="w-px h-3.5 rounded-full"
+                          style={{ background: "#9CA3AF" }}
+                          aria-hidden="true"
+                        />
+                        <button
+                          onClick={() => handleCancelInvitation(p.invitationId)}
+                          className="text-xs px-2 py-1 rounded-lg border text-red-400"
+                          style={{ borderColor: "#FFDDDD" }}
+                        >
+                          취소
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            const member = item.data;
             const isMe = member.userId === user?.userId;
             return (
               <div
@@ -464,7 +727,10 @@ export default function GroupDetailPage() {
                     className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none"
                     placeholder="이메일 입력 후 추가"
                     value={inviteInput}
-                    onChange={(e) => setInviteInput(e.target.value)}
+                    onChange={(e) => {
+                      setInviteInput(e.target.value);
+                      setAddEmailError("");
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -480,6 +746,9 @@ export default function GroupDetailPage() {
                     추가
                   </button>
                 </div>
+                {addEmailError && (
+                  <p className="mt-1.5 text-xs text-red-500">{addEmailError}</p>
+                )}
 
                 {inviteEmails.length > 0 && (
                   <div className="mt-3 flex max-h-28 flex-wrap gap-2 overflow-y-auto">

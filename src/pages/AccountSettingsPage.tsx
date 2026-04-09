@@ -3,6 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api/auth'
 
+// 이메일 형식 검증
+// - 로컬@도메인.TLD 구조
+// - TLD는 영문 2~63자 (숫자·기호 TLD 차단)
+// - 연속 점, 잘못된 위치의 점/하이픈 차단
+function validateEmail(email: string): string | null {
+  if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$/.test(email)) {
+    return '올바른 이메일 형식이 아니에요. (예: example@gmail.com)'
+  }
+  if (/\.\./.test(email)) {
+    return '이메일에 점(.)이 연속으로 올 수 없어요.'
+  }
+  const domain = email.split('@')[1]
+  if (domain.startsWith('.') || domain.endsWith('.') || domain.startsWith('-')) {
+    return '도메인 형식이 올바르지 않아요.'
+  }
+  return null
+}
+
 // 비밀번호 규칙: 소문자 + 숫자 + 특수문자 각 1개 이상, 8자 이상
 function validatePassword(pw: string): string {
   if (pw.length < 8) return '비밀번호는 8자 이상이어야 해요.'
@@ -92,7 +110,10 @@ function EmailChangeModal({ onClose }: { onClose: () => void }) {
   const handleSendCode = async () => {
     setEmailError('')
     setCodeError('')
-    if (!email.trim()) { setEmailError('이메일을 입력해주세요.'); return }
+    const trimmed = email.trim()
+    if (!trimmed) { setEmailError('이메일을 입력해주세요.'); return }
+    const emailValidErr = validateEmail(trimmed)
+    if (emailValidErr) { setEmailError(emailValidErr); return }
     setSendLoading(true)
     try {
       await authApi.sendChangeEmailCode(email.trim())
@@ -382,6 +403,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
 
 function FieldModal({
   title, label, initialValue, inputType = 'text', placeholder,
+  validate,
   onSave, onClose,
 }: {
   title: string
@@ -389,6 +411,7 @@ function FieldModal({
   initialValue: string
   inputType?: string
   placeholder?: string
+  validate?: (v: string) => string | null
   onSave: (value: string) => Promise<void>
   onClose: () => void
 }) {
@@ -400,6 +423,8 @@ function FieldModal({
   const handleSubmit = async () => {
     setError('')
     if (!value.trim()) { setError(`${label}을(를) 입력해주세요.`); return }
+    const validationError = validate?.(value.trim())
+    if (validationError) { setError(validationError); return }
     setLoading(true)
     try {
       await onSave(value.trim())
@@ -487,6 +512,11 @@ export default function AccountSettingsPage() {
       {modal === 'name' && (
         <FieldModal
           title="이름 변경" label="이름" initialValue={user?.name ?? ''}
+          validate={(v) => {
+            if (/['"`,!@#$%^&*()=+\[\]{}<>?/\\|~]/.test(v))
+              return '이름에는 따옴표, 쉼표 등 특수문자를 사용할 수 없어요.'
+            return null
+          }}
           onSave={async (v) => { await authApi.updateProfile({ name: v }) }}
           onClose={closeModal}
         />

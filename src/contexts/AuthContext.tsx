@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await authApi.logout()
     setUser(null)
+    // 로그아웃 시 서버가 XSRF-TOKEN 쿠키를 삭제하므로 즉시 새 토큰을 받아옴
+    await authApi.csrf()
   }
 
   return (

@@ -126,7 +126,7 @@ export default function SignupPage() {
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-gray-800">회원가입</h1>
-        <p className="text-sm text-gray-400 mt-1">Todo와 함께 시작해요</p>
+        <p className="text-sm text-gray-400 mt-1">TodoKing과 함께 시작해요</p>
       </div>
 
       {success ? (

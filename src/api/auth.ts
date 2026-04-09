@@ -1,10 +1,13 @@
-import client from './client'
+import client, { updateCsrfToken } from './client'
 import type { User } from '../types'
 
 export const authApi = {
-  // CSRF 쿠키를 서버에서 받아오기 위해 호출 (응답 본문은 사용하지 않음)
-  csrf: () =>
-    client.get('/auth/csrf'),
+  // CSRF 토큰을 서버에서 받아와 인메모리에 저장 (쿠키 읽기 타이밍 이슈 방지)
+  csrf: async () => {
+    const res = await client.get<{ headerName: string; parameterName: string; token: string }>('/auth/csrf')
+    updateCsrfToken(res.data.token)
+    return res
+  },
 
   signup: (data: { email: string; password: string; name: string }) =>
     client.post('/auth/signup', data),

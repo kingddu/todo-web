@@ -5,7 +5,7 @@ export const groupApi = {
   getMyGroups: () =>
     client.get<MyGroupSummary[]>('/groups'),
 
-  create: (data: { groupName: string; inviteEmails: string[] }) =>
+  create: (data: { groupName: string; description?: string; inviteEmails: string[] }) =>
     client.post<Group>('/groups', data),
 
   getDetail: (groupId: number) =>
@@ -31,6 +31,12 @@ export const groupApi = {
 
   invite: (groupId: number, inviteEmails: string[]) =>
     client.post(`/groups/${groupId}/invitations`, { inviteEmails }),
+
+  cancelInvitation: (groupId: number, invitationId: number) =>
+    client.delete(`/groups/${groupId}/invitations/${invitationId}`),
+
+  changeDescription: (groupId: number, description: string) =>
+    client.patch(`/groups/${groupId}/description`, { description }),
 
   getMyInvitations: () =>
     client.get<GroupInvitationSummary[]>('/group-invitations/me'),
