@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api/auth'
@@ -54,6 +54,165 @@ function PasswordInput({
         >
           <EyeIcon show={show} />
         </button>
+      </div>
+    </div>
+  )
+}
+
+function EmailChangeModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [emailError, setEmailError] = useState('')
+  const [codeError, setCodeError] = useState('')
+  const [sendLoading, setSendLoading] = useState(false)
+  const [verifyLoading, setVerifyLoading] = useState(false)
+  const [done, setDone] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current) }, [])
+
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    setTimeLeft(300)
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current!); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  const handleEmailChange = (v: string) => {
+    setEmail(v)
+    if (codeSent) { setCodeSent(false); setCode(''); setCodeError('') }
+  }
+
+  const handleSendCode = async () => {
+    setEmailError('')
+    setCodeError('')
+    if (!email.trim()) { setEmailError('이메일을 입력해주세요.'); return }
+    setSendLoading(true)
+    try {
+      await authApi.sendChangeEmailCode(email.trim())
+      setCodeSent(true)
+      setCode('')
+      startTimer()
+    } catch (err: any) {
+      if (err?.response?.status === 409) setEmailError('이미 사용 중인 이메일이에요.')
+      else if (err?.response?.status === 400) setEmailError('현재 사용 중인 이메일과 같아요.')
+      else setEmailError('발송에 실패했어요. 잠시 후 다시 시도해주세요.')
+    } finally {
+      setSendLoading(false)
+    }
+  }
+
+  const handleVerifyCode = async () => {
+    setCodeError('')
+    if (!code.trim()) { setCodeError('인증번호를 입력해주세요.'); return }
+    setVerifyLoading(true)
+    try {
+      await authApi.verifyChangeEmailCode({ email: email.trim(), code: code.trim() })
+      await authApi.changeEmail(email.trim())
+      if (timerRef.current) clearInterval(timerRef.current)
+      setDone(true)
+    } catch (err: any) {
+      if (err?.response?.status === 400) setCodeError('인증번호가 올바르지 않아요.')
+      else setCodeError('변경에 실패했어요. 다시 시도해주세요.')
+    } finally {
+      setVerifyLoading(false)
+    }
+  }
+
+  const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40" onClick={done ? onClose : undefined}>
+      <div
+        className="absolute inset-x-4 mx-auto max-w-[480px] overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col"
+        style={{ top: 'clamp(120px, 18vh, 200px)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="px-5 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-800">이메일 변경</h2>
+          <button type="button" onClick={onClose}
+            className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center active:bg-gray-100">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#9CA3AF" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {done ? (
+          <div className="px-5 py-10 flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: '#FFF3F0' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17l-5-5" stroke="#E85D2F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-gray-800">이메일이 변경됐어요</p>
+            <button onClick={onClose} className="mt-2 w-full py-3 rounded-xl text-white font-semibold text-sm"
+              style={{ background: '#E85D2F' }}>확인</button>
+          </div>
+        ) : (
+          <div className="px-5 py-5 flex flex-col gap-3">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">새 이메일</label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => { handleEmailChange(e.target.value); setEmailError('') }}
+                  placeholder="새 이메일 주소"
+                  autoComplete="off"
+                  className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#E85D2F] transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={sendLoading || !email.trim()}
+                  className="flex-shrink-0 px-3 py-3 rounded-xl text-xs font-semibold transition-opacity"
+                  style={{ background: !sendLoading && email.trim() ? '#E85D2F' : '#CCCCCC', color: 'white', whiteSpace: 'nowrap' }}
+                >
+                  {sendLoading ? '발송 중...' : codeSent ? '재발송' : '인증번호 받기'}
+                </button>
+              </div>
+              {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
+            </div>
+
+            {codeSent && (
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">인증번호</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setCodeError('') }}
+                    placeholder="6자리 입력"
+                    maxLength={6}
+                    inputMode="numeric"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#E85D2F] transition-colors tracking-widest"
+                  />
+                  <div className="flex items-center justify-center w-12 flex-shrink-0 text-xs font-mono tabular-nums"
+                    style={{ color: timeLeft > 60 ? '#9CA3AF' : '#E85D2F' }}>
+                    {timeLeft > 0 ? fmt(timeLeft) : '만료'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyCode}
+                    disabled={verifyLoading || timeLeft === 0 || !code.trim()}
+                    className="flex-shrink-0 px-4 py-3 rounded-xl text-xs font-semibold transition-opacity"
+                    style={{ background: !verifyLoading && timeLeft > 0 && code.trim() ? '#E85D2F' : '#CCCCCC', color: 'white' }}
+                  >
+                    {verifyLoading ? '확인 중' : '확인'}
+                  </button>
+                </div>
+                {codeError && <p className="text-xs text-red-500 mt-1">{codeError}</p>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -328,16 +487,12 @@ export default function AccountSettingsPage() {
       {modal === 'name' && (
         <FieldModal
           title="이름 변경" label="이름" initialValue={user?.name ?? ''}
-          onSave={async (v) => { await authApi.updateProfile({ name: v, email: user?.email ?? '' }) }}
+          onSave={async (v) => { await authApi.updateProfile({ name: v }) }}
           onClose={closeModal}
         />
       )}
       {modal === 'email' && (
-        <FieldModal
-          title="이메일 변경" label="이메일" initialValue={user?.email ?? ''} inputType="email"
-          onSave={async (v) => { await authApi.updateProfile({ name: user?.name ?? '', email: v }) }}
-          onClose={closeModal}
-        />
+        <EmailChangeModal onClose={closeModal} />
       )}
       {modal === 'password' && (
         <PasswordModal onClose={() => setModal(null)} />

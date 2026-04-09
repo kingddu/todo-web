@@ -18,8 +18,23 @@ export const authApi = {
   me: () =>
     client.get<User>('/auth/me'),
 
-  updateProfile: (data: { name: string; email: string }) =>
+  updateProfile: (data: { name: string }) =>
     client.patch<User>('/auth/me', data),
+
+  sendSignupEmailCode: (email: string) =>
+    client.post('/auth/email/signup/send-code', { email }),
+
+  verifySignupEmailCode: (data: { email: string; code: string }) =>
+    client.post('/auth/email/signup/verify-code', data),
+
+  sendChangeEmailCode: (email: string) =>
+    client.post('/auth/me/email/send-code', { email }),
+
+  verifyChangeEmailCode: (data: { email: string; code: string }) =>
+    client.post('/auth/me/email/verify-code', data),
+
+  changeEmail: (email: string) =>
+    client.patch<User>('/auth/me/email', { email }),
 
   verifyPassword: (password: string) =>
     client.post('/auth/me/verify-password', { password }),
