@@ -3,7 +3,188 @@ import { useNavigate } from "react-router-dom";
 import { groupApi } from "../api/group";
 import { useInvitations } from "../contexts/InvitationContext";
 import { useAuth } from "../contexts/AuthContext";
-import type { MyGroupSummary } from "../types";
+import type { InvitationBlock, MyGroupSummary } from "../types";
+
+function BlockListModal({
+  onClose,
+  onChanged,
+}: {
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [blocks, setBlocks] = useState<InvitationBlock[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [emailInput, setEmailInput] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [unblockingId, setUnblockingId] = useState<number | null>(null);
+
+  const loadBlocks = useCallback(() => {
+    setListLoading(true);
+    groupApi
+      .getMyBlocks()
+      .then((res) => setBlocks(res.data))
+      .finally(() => setListLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadBlocks();
+  }, [loadBlocks]);
+
+  const handleAdd = async () => {
+    const email = emailInput.trim();
+    if (!email) {
+      setAddError("이메일을 입력해주세요.");
+      return;
+    }
+    setAddError("");
+    setAddLoading(true);
+    try {
+      await groupApi.blockUser(email);
+      setEmailInput("");
+      loadBlocks();
+      onChanged();
+    } catch (err: any) {
+      if (err?.response?.status === 400)
+        setAddError("가입된 사용자만 차단할 수 있어요.");
+      else if (err?.response?.status === 409)
+        setAddError("이미 차단한 사용자예요.");
+      else setAddError("차단에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const handleUnblock = async (blockId: number) => {
+    setUnblockingId(blockId);
+    try {
+      await groupApi.unblockUser(blockId);
+      loadBlocks();
+      onChanged();
+    } catch {
+      alert("차단 해제에 실패했어요.");
+    } finally {
+      setUnblockingId(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
+      <div
+        className="absolute inset-x-4 mx-auto max-w-[480px] overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col"
+        style={{ top: "clamp(120px, 16vh, 210px)", maxHeight: "70vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="px-5 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-800">
+            그룹 초대 차단 관리
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center active:bg-gray-100"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 6L6 18M6 6l12 12"
+                stroke="#9CA3AF"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
+          {/* 이메일로 차단 추가 */}
+          <div>
+            <p className="text-xs text-gray-400 mb-2">이메일로 차단 등록</p>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="차단할 사용자 이메일"
+                value={emailInput}
+                onChange={(e) => {
+                  setEmailInput(e.target.value);
+                  setAddError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAdd();
+                  }
+                }}
+                maxLength={100}
+                className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#E85D2F] transition-colors"
+              />
+              <button
+                onClick={handleAdd}
+                disabled={addLoading || !emailInput.trim()}
+                className="flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity active:opacity-80"
+                style={{
+                  background:
+                    emailInput.trim() && !addLoading ? "#E85D2F" : "#CCCCCC",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {addLoading ? "처리 중..." : "차단"}
+              </button>
+            </div>
+            {addError && (
+              <p className="text-xs text-red-500 mt-1.5">{addError}</p>
+            )}
+          </div>
+
+          {/* 차단 목록 */}
+          <div>
+            <p className="text-xs text-gray-400 mb-2">
+              차단 목록 {blocks.length > 0 && `(${blocks.length}명)`}
+            </p>
+            {listLoading ? (
+              <div className="flex justify-center py-6">
+                <div
+                  className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{
+                    borderColor: "#E85D2F",
+                    borderTopColor: "transparent",
+                  }}
+                />
+              </div>
+            ) : blocks.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">
+                차단한 사용자가 없어요
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {blocks.map((block) => (
+                  <div
+                    key={block.blockId}
+                    className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                  >
+                    <p className="text-sm text-gray-700 truncate mr-2">
+                      {block.blockedEmail}
+                    </p>
+                    <button
+                      onClick={() => handleUnblock(block.blockId)}
+                      disabled={unblockingId === block.blockId}
+                      className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border font-medium transition-opacity active:opacity-70"
+                      style={{ borderColor: "#E85D2F", color: "#E85D2F" }}
+                    >
+                      {unblockingId === block.blockId
+                        ? "해제 중..."
+                        : "차단 해제"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function GroupsPage() {
   const navigate = useNavigate();
@@ -12,6 +193,8 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<MyGroupSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [respondingId, setRespondingId] = useState<number | null>(null);
+  const [blockingId, setBlockingId] = useState<number | null>(null);
+  const [showBlockList, setShowBlockList] = useState(false);
 
   // 고정 그룹
   const pinKey = user?.userId ? `pinnedGroupId_${user.userId}` : null;
@@ -68,12 +251,20 @@ export default function GroupsPage() {
       setCreateError("그룹 이름을 입력해주세요.");
       return;
     }
+    if (inviteEmails.length === 0) {
+      setCreateError("초대할 멤버 이메일을 최소 1명 이상 입력해주세요.");
+      return;
+    }
 
     setCreating(true);
     setCreateError("");
 
     try {
-      await groupApi.create({ groupName: groupName.trim(), description: groupDescription.trim() || undefined, inviteEmails });
+      await groupApi.create({
+        groupName: groupName.trim(),
+        description: groupDescription.trim() || undefined,
+        inviteEmails,
+      });
       setShowCreate(false);
       setGroupName("");
       setGroupDescription("");
@@ -113,6 +304,23 @@ export default function GroupsPage() {
       alert("거절에 실패했어요.");
     } finally {
       setRespondingId(null);
+    }
+  };
+
+  const handleBlock = async (invitationId: number, inviterEmail: string) => {
+    setBlockingId(invitationId);
+    try {
+      await groupApi.blockUser(inviterEmail);
+      refreshInvitations();
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        // 이미 차단된 경우도 초대 목록은 갱신
+        refreshInvitations();
+      } else {
+        alert("차단에 실패했어요.");
+      }
+    } finally {
+      setBlockingId(null);
     }
   };
 
@@ -156,6 +364,25 @@ export default function GroupsPage() {
 
         <h1 className="text-lg font-bold text-gray-800 flex-1">그룹 관리</h1>
 
+        <button
+          onClick={() => setShowBlockList(true)}
+          className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium border"
+          style={{ borderColor: "#374151", color: "#111827" }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#374151" strokeWidth="2" />
+            <line
+              x1="4.93"
+              y1="4.93"
+              x2="19.07"
+              y2="19.07"
+              stroke="#374151"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+          차단 목록
+        </button>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-medium"
@@ -225,11 +452,13 @@ export default function GroupsPage() {
                       </p>
                     </div>
 
-                    {/* 승낙 / 거절 버튼 */}
+                    {/* 수락 / 거절 / 차단 버튼 */}
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => handleAccept(inv.invitationId)}
-                        disabled={isResponding}
+                        disabled={
+                          isResponding || blockingId === inv.invitationId
+                        }
                         className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity active:opacity-80 disabled:opacity-50"
                         style={{ background: "#4AAFCC" }}
                       >
@@ -237,10 +466,26 @@ export default function GroupsPage() {
                       </button>
                       <button
                         onClick={() => handleReject(inv.invitationId)}
-                        disabled={isResponding}
+                        disabled={
+                          isResponding || blockingId === inv.invitationId
+                        }
                         className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 transition-opacity active:opacity-80 disabled:opacity-50"
                       >
-                        {isResponding ? "처리 중..." : "거절"}
+                        거절
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleBlock(inv.invitationId, inv.invitedByUserEmail)
+                        }
+                        disabled={
+                          isResponding || blockingId === inv.invitationId
+                        }
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity active:opacity-80 disabled:opacity-50"
+                        style={{ background: "#FFF0EC", color: "#E85D2F" }}
+                      >
+                        {blockingId === inv.invitationId
+                          ? "처리 중..."
+                          : "차단"}
                       </button>
                     </div>
                   </div>
@@ -452,6 +697,14 @@ export default function GroupsPage() {
         </>
       )}
 
+      {/* 차단 목록 모달 */}
+      {showBlockList && (
+        <BlockListModal
+          onClose={() => setShowBlockList(false)}
+          onChanged={refreshInvitations}
+        />
+      )}
+
       {/* 그룹 생성 모달 */}
       {showCreate && (
         <div
@@ -473,13 +726,24 @@ export default function GroupsPage() {
             </div>
 
             <div className="px-5 py-4 flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                style={{ outlineColor: "#4AAFCC" }}
-                placeholder="그룹 이름 *"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-14 text-sm outline-none transition-colors"
+                  style={{ outlineColor: "#4AAFCC" }}
+                  placeholder="그룹 이름 *"
+                  value={groupName}
+                  maxLength={20}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs tabular-nums pointer-events-none"
+                  style={{
+                    color: groupName.length >= 20 ? "#E85D2F" : "#D1D5DB",
+                  }}
+                >
+                  {groupName.length}/20
+                </span>
+              </div>
               <div className="relative">
                 <input
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-14 text-sm outline-none transition-colors"
@@ -504,6 +768,7 @@ export default function GroupsPage() {
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
                     placeholder="이메일 입력 후 추가"
                     value={inviteInput}
+                    maxLength={100}
                     onChange={(e) => setInviteInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {

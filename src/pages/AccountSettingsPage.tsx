@@ -45,12 +45,13 @@ function EyeIcon({ show }: { show: boolean }) {
 }
 
 function PasswordInput({
-  label, value, onChange, placeholder
+  label, value, onChange, placeholder, maxLength
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  maxLength?: number
 }) {
   const [show, setShow] = useState(false)
   return (
@@ -63,6 +64,7 @@ function PasswordInput({
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete="off"
+          maxLength={maxLength}
           className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm outline-none focus:border-[#E85D2F] transition-colors"
         />
         <button
@@ -187,6 +189,7 @@ function EmailChangeModal({ onClose }: { onClose: () => void }) {
                   onChange={e => { handleEmailChange(e.target.value); setEmailError('') }}
                   placeholder="새 이메일 주소"
                   autoComplete="off"
+                  maxLength={100}
                   className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#E85D2F] transition-colors"
                 />
                 <button
@@ -326,7 +329,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
         {step === 'verify' && (
           <div className="px-5 py-5 flex flex-col gap-4">
             <p className="text-xs text-gray-400">보안을 위해 현재 비밀번호를 먼저 확인할게요.</p>
-            <PasswordInput label="현재 비밀번호" value={current} onChange={v => { setCurrent(v); setError('') }} />
+            <PasswordInput label="현재 비밀번호" value={current} onChange={v => { setCurrent(v); setError('') }} maxLength={72} />
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button
               onClick={handleVerify}
@@ -342,8 +345,8 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
         {/* Step 2: 새 비밀번호 설정 */}
         {step === 'change' && (
           <div className="px-5 py-5 flex flex-col gap-3">
-            <PasswordInput label="새 비밀번호" value={next} onChange={v => { setNext(v); setError('') }} placeholder="소문자·숫자·특수문자 포함 8자 이상" />
-            <PasswordInput label="새 비밀번호 확인" value={confirm} onChange={v => { setConfirm(v); setError('') }} />
+            <PasswordInput label="새 비밀번호" value={next} onChange={v => { setNext(v); setError('') }} placeholder="소문자·숫자·특수문자 포함 8자 이상" maxLength={72} />
+            <PasswordInput label="새 비밀번호 확인" value={confirm} onChange={v => { setConfirm(v); setError('') }} maxLength={72} />
 
             {/* 조건 안내 */}
             <div className="flex flex-col gap-1 px-1">
@@ -403,7 +406,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
 
 function FieldModal({
   title, label, initialValue, inputType = 'text', placeholder,
-  validate,
+  validate, maxLength,
   onSave, onClose,
 }: {
   title: string
@@ -412,6 +415,7 @@ function FieldModal({
   inputType?: string
   placeholder?: string
   validate?: (v: string) => string | null
+  maxLength?: number
   onSave: (value: string) => Promise<void>
   onClose: () => void
 }) {
@@ -468,14 +472,26 @@ function FieldModal({
           <div className="px-5 py-5 flex flex-col gap-4">
             <div>
               <label className="text-xs text-gray-400 mb-1 block">{label}</label>
-              <input
-                type={inputType}
-                value={value}
-                onChange={e => { setValue(e.target.value); setError('') }}
-                placeholder={placeholder}
-                autoComplete="off"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#E85D2F] transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={inputType}
+                  value={value}
+                  onChange={e => { setValue(e.target.value); setError('') }}
+                  placeholder={placeholder}
+                  autoComplete="off"
+                  maxLength={maxLength}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#E85D2F] transition-colors"
+                  style={{ paddingRight: maxLength ? '3.5rem' : undefined }}
+                />
+                {maxLength && (
+                  <span
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs tabular-nums pointer-events-none"
+                    style={{ color: value.length >= maxLength ? '#E85D2F' : '#D1D5DB' }}
+                  >
+                    {value.length}/{maxLength}
+                  </span>
+                )}
+              </div>
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button onClick={handleSubmit} disabled={loading}
@@ -512,6 +528,7 @@ export default function AccountSettingsPage() {
       {modal === 'name' && (
         <FieldModal
           title="이름 변경" label="이름" initialValue={user?.name ?? ''}
+          maxLength={50}
           validate={(v) => {
             if (/['"`,!@#$%^&*()=+\[\]{}<>?/\\|~]/.test(v))
               return '이름에는 따옴표, 쉼표 등 특수문자를 사용할 수 없어요.'

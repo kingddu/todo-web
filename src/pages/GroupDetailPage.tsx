@@ -129,8 +129,9 @@ export default function GroupDetailPage() {
       setShowInvite(false);
       setInviteEmails([]);
       load();
-    } catch {
-      setInviteError("초대 발송에 실패했어요.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setInviteError(msg ?? "초대 발송에 실패했어요.");
     } finally {
       setInviteLoading(false);
     }
@@ -293,6 +294,7 @@ export default function GroupDetailPage() {
                   className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
                   placeholder={detail.groupName}
                   value={newAlias}
+                  maxLength={100}
                   onChange={(e) => {
                     setNewAlias(e.target.value);
                     setAliasError("");
@@ -727,6 +729,7 @@ export default function GroupDetailPage() {
                     className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none"
                     placeholder="이메일 입력 후 추가"
                     value={inviteInput}
+                    maxLength={100}
                     onChange={(e) => {
                       setInviteInput(e.target.value);
                       setAddEmailError("");

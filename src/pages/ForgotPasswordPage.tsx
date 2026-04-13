@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authApi } from '../api/auth'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,7 +9,7 @@ function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
-export default function SignupPage() {
+export default function ForgotPasswordPage() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
 
@@ -17,11 +17,10 @@ export default function SignupPage() {
     if (!authLoading && user) navigate('/today', { replace: true })
   }, [user, authLoading, navigate])
 
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [code, setCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const [codeSent, setCodeSent] = useState(false)
   const [emailVerified, setEmailVerified] = useState(false)
@@ -67,13 +66,13 @@ export default function SignupPage() {
     if (!email.trim()) { setError('이메일을 입력해주세요.'); return }
     setSendLoading(true)
     try {
-      await authApi.sendSignupEmailCode(email.trim())
+      await authApi.sendResetPasswordCode(email.trim())
       setCodeSent(true)
       setEmailVerified(false)
       setCode('')
       startTimer()
     } catch (err: any) {
-      if (err?.response?.status === 409) setError('이미 가입된 이메일이에요.')
+      if (err?.response?.status === 404) setError('가입되지 않은 이메일이에요.')
       else setError('인증번호 발송에 실패했어요. 잠시 후 다시 시도해주세요.')
     } finally {
       setSendLoading(false)
@@ -85,7 +84,7 @@ export default function SignupPage() {
     if (!code.trim()) { setCodeError('인증번호를 입력해주세요.'); return }
     setVerifyLoading(true)
     try {
-      await authApi.verifySignupEmailCode({ email: email.trim(), code: code.trim() })
+      await authApi.verifyResetPasswordCode({ email: email.trim(), code: code.trim() })
       setEmailVerified(true)
       if (timerRef.current) clearInterval(timerRef.current)
     } catch {
@@ -95,50 +94,53 @@ export default function SignupPage() {
     }
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     if (!emailVerified) { setError('이메일 인증을 완료해주세요.'); return }
-    if (password.length < 8) { setError('비밀번호는 8자 이상이어야 해요.'); return }
-    if (password !== passwordConfirm) { setError('비밀번호가 일치하지 않아요.'); return }
+    if (newPassword !== confirmPassword) { setError('비밀번호가 일치하지 않아요.'); return }
     setError('')
     setSubmitLoading(true)
     try {
-      await authApi.signup({ name: name.trim(), email: email.trim(), password })
+      await authApi.resetPassword({ email: email.trim(), newPassword, confirmPassword })
       setSuccess(true)
     } catch (err: any) {
-      if (err?.response?.status === 400) setError('이메일 인증을 다시 진행해주세요.')
-      else setError('회원가입에 실패했어요. 다시 시도해주세요.')
+      if (err?.response?.status === 400) setError(err.response.data?.message ?? '입력 내용을 확인해주세요.')
+      else setError('비밀번호 변경에 실패했어요. 다시 시도해주세요.')
     } finally {
       setSubmitLoading(false)
     }
   }
 
   return (
-    <div className="app-shell min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ background: 'linear-gradient(160deg, #FFF3F0 0%, #FAFAFA 50%)' }}>
-
+    <div
+      className="app-shell min-h-screen flex flex-col items-center justify-center px-6"
+      style={{ background: 'linear-gradient(160deg, #FFF3F0 0%, #FAFAFA 50%)' }}
+    >
       <div className="mb-8 text-center">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
-          style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
+          style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}
+        >
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
             <path d="M9 11l3 3L22 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">회원가입</h1>
-        <p className="text-sm text-gray-400 mt-1">TodoKing과 함께 시작해요</p>
+        <h1 className="text-2xl font-bold text-gray-800">비밀번호 찾기</h1>
+        <p className="text-sm text-gray-400 mt-1">가입한 이메일로 인증 후 재설정해요</p>
       </div>
 
       {success ? (
         <div className="w-full flex flex-col items-center gap-5">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-md"
-            style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}>
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center shadow-md"
+            style={{ background: 'linear-gradient(135deg, #E85D2F, #FF7B52)' }}
+          >
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <p className="text-sm text-gray-700 text-center leading-relaxed">
-            회원가입을 축하합니다.<br />가입하신 계정으로 로그인을 해주세요.
+            비밀번호가 변경되었습니다.<br />새 비밀번호로 로그인해주세요.
           </p>
           <button
             onClick={() => navigate('/login', { replace: true })}
@@ -149,41 +151,24 @@ export default function SignupPage() {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
-          {/* 이름 */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="이름"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              autoComplete="name"
-              maxLength={20}
-              className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 pr-16 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm"
-              required
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs tabular-nums pointer-events-none"
-              style={{ color: name.length >= 20 ? '#E85D2F' : '#D1D5DB' }}>
-              {name.length}/20
-            </span>
-          </div>
-
+        <div className="w-full flex flex-col gap-3">
           {/* 이메일 + 인증번호 받기 */}
           <div className="flex gap-2">
             <input
               type="email"
-              placeholder="이메일"
+              placeholder="가입한 이메일"
               value={email}
               onChange={e => handleEmailChange(e.target.value)}
               autoComplete="username"
               disabled={emailVerified}
               maxLength={100}
               className="flex-1 min-w-0 bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm disabled:bg-gray-50 disabled:text-gray-400"
-              required
             />
             {emailVerified ? (
-              <div className="flex items-center justify-center px-3 flex-shrink-0 rounded-2xl text-xs font-semibold shadow-sm gap-1"
-                style={{ background: '#F0FFF4', color: '#16A34A', border: '1px solid #BBF7D0' }}>
+              <div
+                className="flex items-center justify-center px-3 flex-shrink-0 rounded-2xl text-xs font-semibold shadow-sm gap-1"
+                style={{ background: '#F0FFF4', color: '#16A34A', border: '1px solid #BBF7D0' }}
+              >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <path d="M5 13l4 4L19 7" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -215,8 +200,10 @@ export default function SignupPage() {
                   inputMode="numeric"
                   className="flex-1 min-w-0 bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm tracking-widest"
                 />
-                <div className="flex items-center justify-center w-12 flex-shrink-0 text-xs font-mono tabular-nums"
-                  style={{ color: timeLeft > 60 ? '#9CA3AF' : '#E85D2F' }}>
+                <div
+                  className="flex items-center justify-center w-12 flex-shrink-0 text-xs font-mono tabular-nums"
+                  style={{ color: timeLeft > 60 ? '#9CA3AF' : '#E85D2F' }}
+                >
                   {timeLeft > 0 ? formatTime(timeLeft) : '만료'}
                 </div>
                 <button
@@ -233,67 +220,74 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* 비밀번호 */}
-          <input
-            type="password"
-            placeholder="비밀번호 (소문자·숫자·특수문자 포함 8자 이상)"
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError('') }}
-            autoComplete="new-password"
-            maxLength={72}
-            className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm"
-            required
-          />
-          {/* 비밀번호 확인 */}
-          <div className="relative">
-            <input
-              type="password"
-              placeholder="비밀번호 확인"
-              value={passwordConfirm}
-              onChange={e => { setPasswordConfirm(e.target.value); setError('') }}
-              autoComplete="new-password"
-              maxLength={72}
-              className="w-full bg-white border rounded-2xl px-4 py-4 text-sm outline-none transition-colors shadow-sm"
-              style={{
-                borderColor: passwordConfirm
-                  ? password === passwordConfirm ? '#22C55E' : '#EF4444'
-                  : '#E5E7EB',
-              }}
-              required
-            />
-            {passwordConfirm && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                {password === passwordConfirm ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 13l4 4L19 7" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18M6 6l12 12" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" />
-                  </svg>
+          {/* 새 비밀번호 */}
+          {emailVerified && (
+            <>
+              <input
+                type="password"
+                placeholder="새 비밀번호 (소문자·숫자·특수문자 포함 8자 이상)"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setError('') }}
+                autoComplete="new-password"
+                maxLength={72}
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm"
+              />
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="새 비밀번호 확인"
+                  value={confirmPassword}
+                  onChange={e => { setConfirmPassword(e.target.value); setError('') }}
+                  autoComplete="new-password"
+                  maxLength={72}
+                  className="w-full bg-white border rounded-2xl px-4 py-4 text-sm outline-none transition-colors shadow-sm"
+                  style={{
+                    borderColor: confirmPassword
+                      ? newPassword === confirmPassword ? '#22C55E' : '#EF4444'
+                      : '#E5E7EB',
+                  }}
+                />
+                {confirmPassword && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    {newPassword === confirmPassword ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 13l4 4L19 7" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" />
+                      </svg>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           {error && <p className="text-xs text-red-500 text-center">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={submitLoading || !emailVerified}
-            className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-1 transition-opacity active:opacity-80 shadow-md"
-            style={{ background: !submitLoading && emailVerified ? 'linear-gradient(135deg, #E85D2F, #FF7B52)' : '#CCCCCC' }}
-          >
-            {submitLoading ? '가입 중...' : '가입하기'}
-          </button>
-        </form>
+          {emailVerified && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitLoading || !newPassword || !confirmPassword}
+              className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-1 transition-opacity active:opacity-80 shadow-md"
+              style={{
+                background: !submitLoading && newPassword && confirmPassword
+                  ? 'linear-gradient(135deg, #E85D2F, #FF7B52)'
+                  : '#CCCCCC',
+              }}
+            >
+              {submitLoading ? '변경 중...' : '비밀번호 변경'}
+            </button>
+          )}
+        </div>
       )}
 
       {!success && (
         <p className="mt-6 text-sm text-gray-400">
-          이미 계정이 있으신가요?{' '}
           <Link to="/login" className="font-semibold" style={{ color: '#E85D2F' }}>
-            로그인
+            로그인으로 돌아가기
           </Link>
         </p>
       )}

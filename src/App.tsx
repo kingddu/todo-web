@@ -5,6 +5,7 @@ import { InvitationProvider } from './contexts/InvitationContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import TodayPage from './pages/TodayPage'
 import RecordPage from './pages/RecordPage'
 import NextPage from './pages/NextPage'
@@ -35,6 +36,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route element={
         <AuthGuard>

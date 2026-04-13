@@ -1,5 +1,5 @@
 import client from './client'
-import type { Group, GroupDetail, GroupInvitationSummary, MyGroupSummary } from '../types'
+import type { Group, GroupDetail, GroupInvitationSummary, InvitationBlock, MyGroupSummary } from '../types'
 
 export const groupApi = {
   getMyGroups: () =>
@@ -46,4 +46,13 @@ export const groupApi = {
 
   rejectInvitation: (invitationId: number) =>
     client.post(`/group-invitations/${invitationId}/reject`),
+
+  blockUser: (email: string) =>
+    client.post('/group-invitation-blocks', { email }),
+
+  getMyBlocks: () =>
+    client.get<InvitationBlock[]>('/group-invitation-blocks/me'),
+
+  unblockUser: (blockId: number) =>
+    client.delete(`/group-invitation-blocks/${blockId}`),
 }

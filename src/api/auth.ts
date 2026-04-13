@@ -45,6 +45,15 @@ export const authApi = {
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     client.patch('/auth/me/password', data),
 
+  sendResetPasswordCode: (email: string) =>
+    client.post('/auth/password/send-code', { email }),
+
+  verifyResetPasswordCode: (data: { email: string; code: string }) =>
+    client.post('/auth/password/verify-code', data),
+
+  resetPassword: (data: { email: string; newPassword: string; confirmPassword: string }) =>
+    client.post('/auth/password/reset', data),
+
   uploadProfileImage: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

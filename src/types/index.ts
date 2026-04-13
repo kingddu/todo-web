@@ -132,6 +132,13 @@ export interface GroupInvitationSummary {
   invitedByUserEmail: string
 }
 
+export interface InvitationBlock {
+  blockId: number
+  blockedUserId: number
+  blockedEmail: string
+  createdAt: string
+}
+
 export type FontId = 'noto' | 'gothic' | 'nanum' | 'doHyeon' | 'gowun' | 'blackHan' | 'sunflower' | 'gaegu' | 'jua'
 
 export interface FontOption {

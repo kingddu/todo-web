@@ -20,7 +20,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (authLoading) return
+    if (authLoading) return;
     setError("");
     setLoading(true);
     try {
@@ -75,6 +75,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="username"
+          maxLength={100}
           className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm"
           required
         />
@@ -84,6 +85,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
+          maxLength={72}
           className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 text-sm outline-none focus:border-[#E85D2F] transition-colors shadow-sm"
           required
         />
@@ -95,23 +97,37 @@ export default function LoginPage() {
           disabled={loading || authLoading}
           className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-1 transition-opacity active:opacity-80 shadow-md"
           style={{
-            background: loading || authLoading
-              ? "#CCCCCC"
-              : "linear-gradient(135deg, #E85D2F, #FF7B52)",
+            background:
+              loading || authLoading
+                ? "#CCCCCC"
+                : "linear-gradient(135deg, #E85D2F, #FF7B52)",
           }}
         >
           {loading ? "로그인 중..." : "로그인"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-gray-400">
-        계정이 없으신가요?{" "}
+      <p className="mt-6 text-sm text-gray-400 text-center">
         <Link
           to="/signup"
           className="font-semibold"
           style={{ color: "#E85D2F" }}
         >
           회원가입
+        </Link>
+
+        <span
+          className="mx-2 inline-block h-[0.8em] w-px align-middle"
+          style={{ backgroundColor: "#E85D2F", opacity: 0.65 }}
+          aria-hidden="true"
+        />
+
+        <Link
+          to="/forgot-password"
+          className="font-semibold"
+          style={{ color: "#E85D2F" }}
+        >
+          비밀번호 찾기
         </Link>
       </p>
     </div>
