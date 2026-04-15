@@ -11,9 +11,9 @@ export type TodoType = 'DATE_ONLY' | 'RANGE' | 'DEADLINE'
 
 export interface Todo {
   id: number
+  creatorUserId: number
   title: string
   content?: string
-  category?: string
   type: TodoType
   startDate: string
   endDate: string
@@ -43,7 +43,6 @@ export interface TodoEditLog {
 export interface TodoCreatePayload {
   title: string
   content?: string
-  category?: string
   type: TodoType
   startDate: string
   endDate: string
@@ -54,11 +53,11 @@ export interface TodoCreatePayload {
 export interface TodoPatchPayload {
   title?: string
   content?: string
-  category?: string
   type?: TodoType
   startDate?: string
   endDate?: string
   carryOver?: boolean
+  groupId?: number | null
 }
 
 export interface Group {
@@ -137,6 +136,16 @@ export interface InvitationBlock {
   blockedUserId: number
   blockedEmail: string
   createdAt: string
+}
+
+export interface TodoMemo {
+  memoId: number
+  userId: number
+  userName: string
+  profileImageUrl?: string
+  content: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type FontId = 'noto' | 'gothic' | 'nanum' | 'doHyeon' | 'gowun' | 'blackHan' | 'sunflower' | 'gaegu' | 'jua'

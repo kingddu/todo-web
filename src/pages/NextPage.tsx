@@ -89,9 +89,6 @@ export default function NextPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-800 truncate">{todo.title}</p>
-                    {todo.category && (
-                      <p className="text-xs text-gray-400 mt-0.5">{todo.category}</p>
-                    )}
                     {todo.groupName && (
                       <p className="text-xs mt-0.5" style={{ color: '#4AAFCC' }}>
                         {todo.groupDisbanded ? `${todo.groupName} (해산)` : todo.groupName}

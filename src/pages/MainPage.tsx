@@ -412,6 +412,7 @@ export default function MainPage({ initialDate }: Props) {
             setEditTarget(null);
           }}
           onSave={handleSave}
+          onDelete={handleDelete}
         />
       )}
     </div>

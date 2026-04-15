@@ -1,5 +1,5 @@
 import client from './client'
-import type { Todo, TodoCreatePayload, TodoPatchPayload, TodoEditLog } from '../types'
+import type { Todo, TodoCreatePayload, TodoPatchPayload, TodoEditLog, TodoMemo } from '../types'
 
 export const todoApi = {
   create: (data: TodoCreatePayload) =>
@@ -25,4 +25,13 @@ export const todoApi = {
 
   getLogs: (todoId: number) =>
     client.get<TodoEditLog[]>(`/todos/${todoId}/logs`),
+
+  getMemos: (todoId: number) =>
+    client.get<TodoMemo[]>(`/todos/${todoId}/memos`),
+
+  saveMemo: (todoId: number, content: string) =>
+    client.post<TodoMemo>(`/todos/${todoId}/memos`, { content }),
+
+  deleteMemo: (todoId: number) =>
+    client.delete(`/todos/${todoId}/memos/me`),
 }

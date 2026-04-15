@@ -161,11 +161,6 @@ export default function TodoItem({
         </div>
 
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          {todo.category && (
-            <span className="text-[10px] px-2 py-[2px] rounded-full bg-gray-100 text-gray-500">
-              {todo.category}
-            </span>
-          )}
           {todo.groupName && (
             <span
               className="text-[10px] px-2 py-[2px] rounded-full text-white"
