@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# TodoKing Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+TodoKing의 프론트엔드 애플리케이션입니다.  
+할 일을 관리하고, 그룹 단위로 협업하며, 기록과 달성률을 확인할 수 있는 웹 서비스입니다.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📌 프로젝트 소개
 
-## React Compiler
+TodoKing은 개인 및 그룹 단위로 할 일을 관리할 수 있는 서비스입니다.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+사용자는 다음과 같은 기능을 사용할 수 있습니다:
 
-## Expanding the ESLint configuration
+- 회원가입 / 로그인 / 로그아웃
+- 이메일 인증 기반 회원가입
+- 비밀번호 찾기 / 재설정
+- 오늘 할 일 관리
+- 주간 기준 미완료 / 예정 할 일 조회
+- 그룹 생성 및 초대/관리
+- 프로필 설정 및 달성률 확인
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠 기술 스택
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Frontend**
+  - React 19
+  - TypeScript
+  - Vite
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **상태 관리 / 데이터**
+  - TanStack Query
+  - React Context
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- **네트워크**
+  - Axios
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **스타일**
+  - Tailwind CSS
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **기타**
+  - React Router DOM
+  - Day.js
+
+---
+
+## 📁 폴더 구조
+
+```bash
+src/
+├─ api/            # API 통신 로직
+├─ components/     # 공통 UI 컴포넌트
+├─ contexts/       # 전역 상태 (인증, 초대, 폰트 등)
+├─ pages/          # 페이지 단위 컴포넌트
+├─ types/          # 타입 정의
+├─ App.tsx
+└─ main.tsx
 ```
